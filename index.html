@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Question Answering System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">PDF Question Answering System</h1>
+        
+        <!-- PDF Upload Section -->
+        <div class="mb-8">
+            <h2 class="text-xl mb-4 text-gray-700">1. Upload PDF</h2>
+            <form id="uploadForm" class="space-y-4">
+                <div class="flex items-center justify-center w-full">
+                    <label class="flex flex-col w-full h-32 border-4 border-dashed hover:bg-gray-100 hover:border-gray-300">
+                        <div class="flex flex-col items-center justify-center pt-7">
+                            <svg class="w-8 h-8 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <p class="pt-1 text-sm tracking-wider text-gray-400 group-hover:text-gray-600">
+                                Select a PDF file
+                            </p>
+                        </div>
+                        <input type="file" class="opacity-0" accept=".pdf" id="pdfFile" />
+                    </label>
+                </div>
+                <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                    Upload PDF
+                </button>
+            </form>
+            <div id="uploadStatus" class="mt-2 text-center text-sm"></div>
+        </div>
+
+        <!-- Question Asking Section -->
+        <div class="mb-8">
+            <h2 class="text-xl mb-4 text-gray-700">2. Ask a Question</h2>
+            <form id="questionForm" class="space-y-4">
+                <input type="text" id="question" placeholder="Type your question here..." 
+                       class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required>
+                <button type="submit" class="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                    Ask Question
+                </button>
+            </form>
+        </div>
+
+        <!-- Answer Section -->
+        <div>
+            <h2 class="text-xl mb-4 text-gray-700">3. Answer</h2>
+            <div id="answer" class="p-4 bg-gray-50 rounded-lg min-h-[100px]">
+                The answer will appear here...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('pdfFile');
+            const statusDiv = document.getElementById('uploadStatus');
+            
+            if (!fileInput.files[0]) {
+                statusDiv.textContent = 'Please select a file first.';
+                statusDiv.className = 'mt-2 text-center text-sm text-red-500';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                statusDiv.textContent = 'Uploading...';
+                statusDiv.className = 'mt-2 text-center text-sm text-blue-500';
+                
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                statusDiv.textContent = 'PDF uploaded and processed successfully!';
+                statusDiv.className = 'mt-2 text-center text-sm text-green-500';
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
+                statusDiv.className = 'mt-2 text-center text-sm text-red-500';
+            }
+        });
+
+        document.getElementById('questionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const question = document.getElementById('question').value;
+            const answerDiv = document.getElementById('answer');
+
+            try {
+                answerDiv.textContent = 'Finding answer...';
+                
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ question })
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                answerDiv.textContent = data.answer;
+            } catch (error) {
+                answerDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
